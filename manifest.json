@@ -1,0 +1,11 @@
+{
+    "manifest_version": 3,
+    "name": "LifeMotivator",
+    "version": "1.0",
+    "description": "Congratulations, you survived another day!",
+    "action": {
+      "default_popup": "content.html"
+      
+    },
+    "permissions": ["storage"]
+  }

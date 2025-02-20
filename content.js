@@ -8,8 +8,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let hourlyEarnings = 0;
     let startTime, endTime;
+    const topRichPeople = [
+        { name: "Elon Musk", netWorth: 230000000000 },
+        { name: "Jeff Bezos", netWorth: 160000000000 },
+        { name: "Bernard Arnault", netWorth: 150000000000 },
+        { name: "Bill Gates", netWorth: 120000000000 },
+        { name: "Mark Zuckerberg", netWorth: 110000000000 },
+        { name: "Warren Buffett", netWorth: 105000000000 },
+        { name: "Larry Ellison", netWorth: 100000000000 },
+        { name: "Larry Page", netWorth: 95000000000 },
+        { name: "Sergey Brin", netWorth: 93000000000 },
+        { name: "Steve Ballmer", netWorth: 89000000000 }
+      ];
+    
+      const dropdown = document.getElementById("richDropdown");
 
-    chrome.storage.sync.get(["hourlyEarnings", "startTimeValue", "endTimeValue"], function (result) {
+      // Populate dropdown with top rich people
+      topRichPeople.forEach((person) => {
+        const option = document.createElement("option");
+        option.value = person.netWorth;
+        option.textContent = person.name;
+        dropdown.appendChild(option);
+      });
+
+    chrome.storage.sync.get(["hourlyEarnings", "startTimeValue", "endTimeValue","selectedPerson"], function (result) {
         console.log("Retrieved from storage:", result);
 
         if (result.hourlyEarnings) {
@@ -26,6 +48,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (startTimeInput.value && endTimeInput.value) {
             calculateTime();
         }
+        if (result.selectedPerson) {
+            dropdown.value = result.selectedPerson;
+            calculateYearsToRich();
+          }
     });
 
     saveButton.addEventListener("click", function () {
@@ -88,8 +114,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const now = new Date();
         let earnedSoFar;
-
-        if (now >= endTime) {
+        if(now<startTime){
+            earnedSoFar = 0;
+        }
+        else if (now >= endTime) {
          
             earnedSoFar = ((endTime - startTime) / 3600000 * hourlyEarnings).toFixed(2);
         } else {
@@ -101,6 +129,35 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Earned Amount:", earnedSoFar);
         earnedAmount.textContent = `$${earnedSoFar}`;
     }
+
+    function calculateYearsToRich() {
+        const selectedNetWorth = parseFloat(dropdown.value);
+    
+        if (!hourlyEarnings || !selectedNetWorth) {
+          document.getElementById("yearsToRich").textContent = "__";
+          return;
+        }
+    
+        // Calculate annual income (assuming 40 hours per week and 52 weeks per year)
+        const annualIncome = hourlyEarnings * 40 * 52;
+        const yearsToReach = (selectedNetWorth / annualIncome).toFixed(2);
+    
+        // Display the result
+        document.getElementById("yearsToMatch").textContent = yearsToReach;
+      }
+    
+      // Add event listeners
+      dropdown.addEventListener("change", function () {
+        chrome.storage.sync.set({ selectedPerson: dropdown.value });
+        calculateYearsToRich();
+      });
+     
+    
+
+
+
+
+
 
     setInterval(updateEarnings, 1000);
 
@@ -116,4 +173,9 @@ document.addEventListener("DOMContentLoaded", function () {
         startTime.style.display = "none";
         endTime.style.display = "none";
     }
+
+    
+
+
+
 });

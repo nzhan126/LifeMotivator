@@ -5,31 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const earnedAmount = document.getElementById("earnedAmount");
     const startTimeInput = document.getElementById("startTime");
     const endTimeInput = document.getElementById("endTime");
+    const dropdown = document.getElementById("richDropdown");
 
     let hourlyEarnings = 0;
     let startTime, endTime;
-    const topRichPeople = [
-        { name: "Elon Musk", netWorth: 230000000000 },
-        { name: "Jeff Bezos", netWorth: 160000000000 },
-        { name: "Bernard Arnault", netWorth: 150000000000 },
-        { name: "Bill Gates", netWorth: 120000000000 },
-        { name: "Mark Zuckerberg", netWorth: 110000000000 },
-        { name: "Warren Buffett", netWorth: 105000000000 },
-        { name: "Larry Ellison", netWorth: 100000000000 },
-        { name: "Larry Page", netWorth: 95000000000 },
-        { name: "Sergey Brin", netWorth: 93000000000 },
-        { name: "Steve Ballmer", netWorth: 89000000000 }
-      ];
-    
-      const dropdown = document.getElementById("richDropdown");
-
-      // Populate dropdown with top rich people
-      topRichPeople.forEach((person) => {
-        const option = document.createElement("option");
-        option.value = person.netWorth;
-        option.textContent = person.name;
-        dropdown.appendChild(option);
-      });
+   
 
     chrome.storage.sync.get(["hourlyEarnings", "startTimeValue", "endTimeValue","selectedPerson"], function (result) {
         console.log("Retrieved from storage:", result);
@@ -49,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
             calculateTime();
         }
         if (result.selectedPerson) {
+            populateDropdown(people);
             dropdown.value = result.selectedPerson;
             calculateYearsToRich();
           }
@@ -132,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function calculateYearsToRich() {
         const selectedNetWorth = parseFloat(dropdown.value);
-    
+        console.log("Start calculating the years for ", dropdown.value);
         if (!hourlyEarnings || !selectedNetWorth) {
           document.getElementById("yearsToRich").textContent = "__";
           return;
@@ -143,14 +124,37 @@ document.addEventListener("DOMContentLoaded", function () {
         const yearsToReach = (selectedNetWorth / annualIncome).toFixed(2);
     
         // Display the result
-        document.getElementById("yearsToMatch").textContent = yearsToReach;
+        document.getElementById("yearsToRich").textContent = yearsToReach;
       }
     
       // Add event listeners
-      dropdown.addEventListener("change", function () {
+    dropdown.addEventListener("change", function () {
+        console.log("Dropdown selection changed to:", dropdown.value);
         chrome.storage.sync.set({ selectedPerson: dropdown.value });
         calculateYearsToRich();
-      });
+    });
+
+      // Fetch the richest people from the background script
+    console.log("Sending message to fetch richest people");
+    chrome.runtime.sendMessage({ action: "fetchRichestPeople" }, function(response) {
+        if (response.data) {
+        console.log("Received data:", response.data);
+        populateDropdown(response.data);
+        } else {
+        console.error("Error fetching richest people:", response.error);
+        }
+    });
+    
+            // Populate dropdown with top rich people
+    function populateDropdown(people) {
+        people.forEach(person => {
+            const option = document.createElement("option");
+            option.value = person.netWorth;
+            option.textContent = `${person.name}`;
+            dropdown.appendChild(option);
+        });
+        }
+
      
     
 
